@@ -24,6 +24,6 @@ def visualize_mha_mask(mask_path, slice_index=None, cmap="nipy_spectral"):
 if __name__ == "__main__":
     # Sabit örnek — istersen argparse ile dışarıdan da alabiliriz
     visualize_mha_mask(
-        mask_path="prediction_004.mha",
-        slice_index=30
+        mask_path="prediction_540.mha",
+        slice_index=50
     )

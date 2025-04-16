@@ -45,8 +45,8 @@ def run_inference(model_path, image_path, device="cuda", size=(128, 256, 256), s
 if __name__ == "__main__":
     run_inference(
         model_path="best_model.pth",
-        image_path=r"C:\Users\user\Desktop\TeethSegmentation\ToothFairy2_DataSet\imagesTr\ToothFairy2P_004_0000.mha",
+        image_path=r"C:\Users\user\Desktop\TeethSegmentation\ToothFairy2_DataSet\imagesTr\ToothFairy2P_540_0000.mha",
         device="cuda",
         size=(128, 256, 256),
-        save_path="prediction_004.mha"
+        save_path="prediction_540.mha"
     )
