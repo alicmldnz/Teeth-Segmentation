@@ -1,7 +1,8 @@
+# 2D Dataset için ayarlanmıştır. 'npy' dosyaları ile çalışır.
+
 import os
 import numpy as np
 import torch
-import SimpleITK as sitk
 
 def compute_class_weights_from_labels(
     labels_dir,
@@ -18,11 +19,12 @@ def compute_class_weights_from_labels(
     print(f"🔍 Sınıf ağırlıkları hesaplanıyor...")
 
     voxel_counts = np.zeros(num_classes, dtype=np.int64)
-    label_files = [f for f in os.listdir(labels_dir) if f.endswith(".mha")]
+    label_files = [f for f in os.listdir(labels_dir) if f.endswith(".npy")]
 
     for file in label_files:
         label_path = os.path.join(labels_dir, file)
-        label = sitk.GetArrayFromImage(sitk.ReadImage(label_path)).astype(np.uint8)
+        label = np.load(label_path).astype(np.uint8)  # sitk yok, doğrudan numpy
+
         unique, counts = np.unique(label, return_counts=True)
         for cls, count in zip(unique, counts):
             if cls < num_classes:
