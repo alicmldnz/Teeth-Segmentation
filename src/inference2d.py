@@ -1,66 +1,102 @@
 import torch
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 from model_2d import UNet2D
+import torch.nn.functional as F
 
-def inference_single_image(model_path, image_path, device="cuda", num_classes=49):
+def inference_all_test(model_path, test_images_dir, test_masks_dir, save_dir="None", device="cuda"):
+    if save_dir != "None":
+        os.makedirs(save_dir, exist_ok=True)
+
     device = torch.device(device if torch.cuda.is_available() else "cpu")
 
-    # Modeli yükle
-    model = UNet2D(in_channels=1, out_channels=num_classes)
+    model = UNet2D(in_channels=1, out_channels=2)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
     model.eval()
 
-    # Görüntüyü yükle
-    image = np.load(image_path)  # [H, W]
-    image = torch.from_numpy(image).unsqueeze(0).unsqueeze(0).float().to(device)  # [1, 1, H, W]
+    # Sadece "upper" içeren dosyaları seçiyoruz
+    image_files = sorted([f for f in os.listdir(test_images_dir) if f.endswith(".npy") and "upper" in f])
 
-    with torch.no_grad():
-        output = model(image)  # [1, num_classes, H, W]
-        pred = torch.argmax(torch.softmax(output, dim=1), dim=1)  # [1, H, W]
+    dice_scores = []
+    accuracies = []
 
-    prediction = pred.squeeze(0).cpu().numpy()  # [H, W]
+    for idx, image_file in enumerate(image_files):
+        image_path = os.path.join(test_images_dir, image_file)
+        mask_path = os.path.join(test_masks_dir, image_file)
 
-    return prediction
+        image = np.load(image_path)
+        mask = np.load(mask_path)
 
-def show_prediction_with_ground_truth(image_path, prediction, mask_path):
-    image = np.load(image_path)
-    ground_truth = np.load(mask_path)
+        # Mask'i binary hale getir
+        mask = (mask > 0).astype(np.uint8)
 
-    plt.figure(figsize=(16, 6))
+        # Görselleştirme için normalize
+        image_disp = (image - np.min(image)) / (np.max(image) - np.min(image) + 1e-8)
+        mask_disp = mask
 
-    plt.subplot(1, 3, 1)
-    plt.imshow(image, cmap="gray")
-    plt.title("Original Image")
-    plt.axis("off")
+        img_tensor = torch.from_numpy(image).unsqueeze(0).unsqueeze(0).float().to(device)  # [1, 1, H, W]
 
-    plt.subplot(1, 3, 2)
-    plt.imshow(ground_truth, cmap="nipy_spectral")
-    plt.title("Ground Truth Mask")
-    plt.axis("off")
+        with torch.no_grad():
+            output = model(img_tensor)  # [1, 2, H, W]
+            pred = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze(0)  # [H, W]
 
-    plt.subplot(1, 3, 3)
-    plt.imshow(prediction, cmap="nipy_spectral")
-    plt.title("Predicted Mask")
-    plt.axis("off")
+        pred_np = pred.cpu().numpy()
 
-    plt.tight_layout()
-    plt.show()
+        # Dice Score Hesapla
+        intersection = np.sum((pred_np == 1) & (mask == 1))
+        union = np.sum(pred_np == 1) + np.sum(mask == 1)
+        dice = (2 * intersection) / (union + 1e-6)
+        dice_scores.append(dice)
 
-    print(f"🎯 Ground Truth Sınıflar: {np.unique(ground_truth)}")
-    print(f"🎯 Prediction Sınıflar: {np.unique(prediction)}")
+        # Accuracy Hesapla
+        correct = np.sum(pred_np == mask)
+        total = mask.size
+        acc = correct / total
+        accuracies.append(acc)
 
+        # İlk 5 sample için görselleri kaydet
+        if idx < 5:
+            plt.figure(figsize=(15,5))
+            
+            plt.subplot(1,3,1)
+            plt.imshow(image_disp, cmap="gray")
+            plt.title("Original Image")
+            plt.axis("off")
+
+            plt.subplot(1,3,2)
+            plt.imshow(mask_disp, cmap="nipy_spectral", vmin=0, vmax=1)
+            plt.title("Ground Truth Mask")
+            plt.axis("off")
+
+            plt.subplot(1,3,3)
+            plt.imshow(pred_np, cmap="nipy_spectral", vmin=0, vmax=1)
+            plt.title(f"Prediction - Dice: {dice:.4f}")
+            plt.axis("off")
+
+            plt.tight_layout()
+
+            if save_dir != "None":
+                plt.savefig(os.path.join(save_dir, f"sample_{idx}.png"))
+                plt.close()
+            else:
+                plt.show()
+
+    # Ortalama Metrikler
+    avg_dice = np.mean(dice_scores)
+    avg_acc = np.mean(accuracies)
+
+    print(f"📈 Ortalama Dice Score: {avg_dice:.4f}")
+    print(f"📈 Ortalama Accuracy: {avg_acc:.4f}")
+
+    return avg_dice, avg_acc
 
 if __name__ == "__main__":
-    pred = inference_single_image(
-    model_path="best_model.pth",
-    image_path=r"C:\Users\user\Desktop\TeethSegmentation\2D_dataset\test\images\ToothFairy2P_049_0000_upper_slice_0.npy",
-    device="cuda",
-    num_classes=49
-    )
-    show_prediction_with_ground_truth(
-    image_path=r"C:\Users\user\Desktop\TeethSegmentation\2D_dataset\test\images\ToothFairy2P_049_0000_upper_slice_0.npy",
-    prediction=pred,
-    mask_path=r"C:\Users\user\Desktop\TeethSegmentation\2D_dataset\test\masks\ToothFairy2P_049_0000_upper_slice_0.npy"
+    inference_all_test(
+        model_path="best_model.pth",
+        test_images_dir=r"C:\Users\user\Desktop\TeethSegmentation\2D_dataset\test\images",
+        test_masks_dir=r"C:\Users\user\Desktop\TeethSegmentation\2D_dataset\test\masks",
+        save_dir=r"C:\Users\user\Desktop\TeethSegmentation\inference_results",
+        device="cuda"
     )

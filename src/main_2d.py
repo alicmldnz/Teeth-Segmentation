@@ -7,9 +7,9 @@ def main():
     val_images_dir = r"C:\Users\user\Desktop\TeethSegmentation\2D_dataset\val\images"
     val_masks_dir = r"C:\Users\user\Desktop\TeethSegmentation\2D_dataset\val\masks"
 
-    batch_size = 16
+    batch_size = 8
     lr = 1e-4
-    epochs = 100
+    epochs = 50
     device = "cuda"  # veya "cpu" kullanabilirsin
 
     print("🚀 Eğitim başlatılıyor...")
@@ -21,8 +21,11 @@ def main():
         batch_size=batch_size,
         lr=lr,
         epochs=epochs,
-        device=device
+        device=device,
+        pretrained_model_path="best_model.pth"
+        
     )
+
     print("✅ Eğitim tamamlandı!")
 
 if __name__ == "__main__":

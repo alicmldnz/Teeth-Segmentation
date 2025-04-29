@@ -10,28 +10,32 @@ from early_stopping import EarlyStopping
 from weight_utils import compute_class_weights_from_labels
 from train_logger import TrainLogger
 from transforms import get_training_augmentation, apply_augmentation
+import os
+from losses import CombinedLoss 
+
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 def train_model(
     train_images_dir,
     train_masks_dir,
     val_images_dir,
     val_masks_dir,
-    num_classes=49,
+    num_classes=2,
     batch_size=8,
     lr=1e-4,
     epochs=50,
     device="cuda",
-    weight_save_path="class_weights.pt"
+    weight_save_path="class_weights.pt",
+    pretrained_model_path=None   # 🔥 yeni eklendi
 ):
-
     device = torch.device(device if torch.cuda.is_available() else "cpu")
 
     # Dataset ve Dataloader
     train_dataset = ToothSegmentation2DDataset(
-        train_images_dir,
+        train_images_dir, 
         train_masks_dir,
         transform=lambda img, msk: apply_augmentation(img, msk, get_training_augmentation())
-    )
+        )
     val_dataset = ToothSegmentation2DDataset(val_images_dir, val_masks_dir)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
@@ -40,22 +44,27 @@ def train_model(
     # Model
     model = UNet2D(in_channels=1, out_channels=num_classes).to(device)
 
-    # Class Weights ve Loss
+    # Eğer pretrained ağırlık varsa yükle
+    if pretrained_model_path:
+        model.load_state_dict(torch.load(pretrained_model_path, map_location=device))
+        print(f"✅ Pretrained model {pretrained_model_path} yüklendi!")
+
+    # Loss
     weights = compute_class_weights_from_labels(
-        labels_dir=r"C:\Users\user\Desktop\TeethSegmentation\2D_dataset\masks",  # labels klasörü
+        labels_dir=os.path.dirname(train_masks_dir),
         num_classes=num_classes,
         save_path=weight_save_path
     ).to(device)
 
-    criterion = nn.CrossEntropyLoss(weight=weights, ignore_index=255)
+    criterion = CombinedLoss() 
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    scaler = torch.amp.GradScaler('cuda')
+    scaler = GradScaler()
     logger = TrainLogger("metrics.json")
     early_stopper = EarlyStopping(patience=10)
 
     best_val_dice = 0.0
 
-    # Eğitim Döngüsü
+    # Eğitim döngüsü
     for epoch in range(epochs):
         print(f"\n📚 Epoch {epoch+1}/{epochs}")
 
@@ -64,12 +73,13 @@ def train_model(
         train_dices = []
 
         for img_batch, label_batch in train_loader:
+
             img_batch = img_batch.to(device)
             label_batch = label_batch.to(device)
-
-            # Ignore sınıflar
+            
+            """# Ignore sınıflar
             for cls in [0, 1, 7]:
-                label_batch[label_batch == cls] = 255
+                label_batch[label_batch == cls] = 255"""
 
             optimizer.zero_grad()
 
@@ -99,21 +109,17 @@ def train_model(
         avg_train_loss = running_loss / len(train_loader)
         avg_train_dice = sum(train_dices) / len(train_dices)
 
-        # Validation
-        val_loss, val_dice = evaluate(model, val_loader, criterion, device, num_classes)
+        val_loss, val_dice, val_acc = evaluate(model, val_loader, criterion, device, num_classes)
 
-        print(f"📉 Train Loss: {avg_train_loss:.4f} | 🎯 Train Dice: {avg_train_dice:.4f}")
-        print(f"✅ Val Loss: {val_loss:.4f} | 🎯 Val Dice: {val_dice:.4f}")
+        print(f"✅ Val Loss: {val_loss:.4f} | 🎯 Val Dice: {val_dice:.4f} | 🎯 Val Acc: {val_acc:.4f}")
 
         logger.log(epoch+1, avg_train_loss, val_loss, avg_train_dice, val_dice)
 
-        # Model kaydet
         if val_dice > best_val_dice:
             best_val_dice = val_dice
             torch.save(model.state_dict(), "best_model.pth")
             print("💾 Best model saved!")
 
-        # Early stopping
         early_stopper(val_dice)
         if early_stopper.early_stop:
             print("⏹️ Early stopping triggered.")
@@ -123,21 +129,20 @@ def evaluate(model, loader, criterion, device, num_classes):
     model.eval()
     total_loss = 0.0
     dice_scores = []
+    accuracies = []
 
     with torch.no_grad():
         for img_batch, label_batch in loader:
             img_batch = img_batch.to(device)
             label_batch = label_batch.to(device)
 
-            # Ignore sınıflar
-            for cls in [0, 1, 7]:
-                label_batch[label_batch == cls] = 255
-
             output = model(img_batch)
             loss = criterion(output, label_batch)
             total_loss += loss.item()
 
             pred = torch.argmax(torch.softmax(output, dim=1), dim=1)
+
+            # Dice
             dice = 0.0
             for cls in range(1, num_classes):
                 pred_cls = (pred == cls).float()
@@ -149,6 +154,13 @@ def evaluate(model, loader, criterion, device, num_classes):
             dice /= (num_classes - 1)
             dice_scores.append(dice.item())
 
+            # 🔥 Accuracy
+            correct = (pred == label_batch).float()
+            acc = correct.sum() / correct.numel()
+            accuracies.append(acc.item())
+
     avg_loss = total_loss / len(loader)
     avg_dice = sum(dice_scores) / len(dice_scores)
-    return avg_loss, avg_dice
+    avg_acc = sum(accuracies) / len(accuracies)
+    return avg_loss, avg_dice, avg_acc
+
