@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 
-TARGET_CLASS = 16  # 🔥 Sadece bu dişi segment edeceğiz!
+TARGET_CLASSES = [16, 17, 18, 26, 27, 28]  # Çoklu sınıflar
 
 class ToothSegmentation2DDataset(Dataset):
     def __init__(self, images_dir, masks_dir, only_upper=True, transform=None):
@@ -28,16 +28,18 @@ class ToothSegmentation2DDataset(Dataset):
         image = np.load(os.path.join(self.images_dir, self.image_files[idx]))
         mask = np.load(os.path.join(self.masks_dir, self.mask_files[idx]))
 
-        # 🔥 Maski binary hale getiriyoruz: 1 = target diş, 0 = background
-        mask = (mask == TARGET_CLASS).astype(np.uint8)
+        # Çoklu sınıflar için yeniden etiketleme
+        new_mask = np.zeros_like(mask, dtype=np.uint8)
+        for i, cls in enumerate(TARGET_CLASSES, start=1):
+            new_mask[mask == cls] = i  # 1, 2, 3, ..., 6
 
         if self.transform:
-            image, mask = self.transform(image, mask)
+            image, new_mask = self.transform(image, new_mask)
 
         image = torch.from_numpy(image).unsqueeze(0).float()
-        mask = torch.from_numpy(mask).long()
+        new_mask = torch.from_numpy(new_mask).long()
 
-        return image, mask
+        return image, new_mask
 
 
 

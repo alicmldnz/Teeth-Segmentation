@@ -20,7 +20,7 @@ def train_model(
     train_masks_dir,
     val_images_dir,
     val_masks_dir,
-    num_classes=2,
+    num_classes=7,
     batch_size=8,
     lr=1e-4,
     epochs=50,
