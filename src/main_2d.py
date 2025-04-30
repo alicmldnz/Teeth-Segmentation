@@ -22,7 +22,7 @@ def main():
         lr=lr,
         epochs=epochs,
         device=device,
-        pretrained_model_path="best_model.pth"
+        pretrained_model_path=None
         
     )
 

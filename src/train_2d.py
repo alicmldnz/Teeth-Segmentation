@@ -12,6 +12,7 @@ from train_logger import TrainLogger
 from transforms import get_training_augmentation, apply_augmentation
 import os
 from losses import CombinedLoss 
+from torch.nn import CrossEntropyLoss
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
@@ -51,12 +52,13 @@ def train_model(
 
     # Loss
     weights = compute_class_weights_from_labels(
-        labels_dir=os.path.dirname(train_masks_dir),
+        labels_dir=train_masks_dir,
         num_classes=num_classes,
-        save_path=weight_save_path
+        save_path=weight_save_path,
+        only_upper=True
     ).to(device)
 
-    criterion = CombinedLoss() 
+    criterion = CrossEntropyLoss(weight=weights)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     scaler = GradScaler()
     logger = TrainLogger("metrics.json")

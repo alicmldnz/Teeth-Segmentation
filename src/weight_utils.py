@@ -1,72 +1,79 @@
-<<<<<<< HEAD
-# 2D Dataset için ayarlanmıştır. 'npy' dosyaları ile çalışır.
+import os
+import numpy as np
+import torch
 
-import os
-import numpy as np
-import torch
-=======
-import os
-import numpy as np
-import torch
-import SimpleITK as sitk
->>>>>>> a939dca8dda3aeef2832fdf9f30d9f61bf6a2265
+# Orijinal mask etiketleri
+TARGET_CLASSES = [16, 17, 18, 26, 27, 28]
+NUM_CLASSES = 7  # 0: background, 1–6: TARGET_CLASSES sırasıyla
 
 def compute_class_weights_from_labels(
-    labels_dir,
-    num_classes=49,
-    ignored_classes=[0, 1, 7],
-    epsilon=1e-6,
-    save_path="class_weights.pt",
-    power=1.5
-):
-    if os.path.exists(save_path):
-        print(f"📂 Kayıtlı class weight dosyası bulundu: {save_path}")
-        return torch.load(save_path)
-
-    print(f"🔍 Sınıf ağırlıkları hesaplanıyor...")
-
-    voxel_counts = np.zeros(num_classes, dtype=np.int64)
-<<<<<<< HEAD
+    labels_dir: str,
+    num_classes: int = NUM_CLASSES,
+    save_path: str = None,
+    only_upper: bool = True
+) -> torch.Tensor:
+    """
+    labels_dir içindeki tüm .npy mask dosyalarındaki
+      - background piksellerini (TARGET_CLASSES dışında kalan) index 0'a,
+      - 16,17,18,26,27,28 piksellerini ise sırasıyla 1–6 index'lerine sayar.
+    only_upper=True ise sadece dosya adı içinde "upper" geçen maskeleri sayar.
+    Ardından her sınıf için 1/(piksel sayısı) formülüne göre ağırlık hesaplar,
+    normalize eder, ekrana bastırır ve isteğe bağlı kaydeder.
+    """
+    # 1) Dosya listesi
     label_files = [f for f in os.listdir(labels_dir) if f.endswith(".npy")]
+    if only_upper:
+        label_files = [f for f in label_files if "upper" in f]
 
-    for file in label_files:
-        label_path = os.path.join(labels_dir, file)
-        label = np.load(label_path).astype(np.uint8)  # sitk yok, doğrudan numpy
+    if not label_files:
+        raise RuntimeError(f"No mask files found in {labels_dir!r} (only_upper={only_upper})")
 
-=======
-    label_files = [f for f in os.listdir(labels_dir) if f.endswith(".mha")]
+    # 2) Piksel sayacı
+    pixel_counts = np.zeros(num_classes, dtype=np.int64)
 
-    for file in label_files:
-        label_path = os.path.join(labels_dir, file)
-        label = sitk.GetArrayFromImage(sitk.ReadImage(label_path)).astype(np.uint8)
->>>>>>> a939dca8dda3aeef2832fdf9f30d9f61bf6a2265
-        unique, counts = np.unique(label, return_counts=True)
-        for cls, count in zip(unique, counts):
-            if cls < num_classes:
-                voxel_counts[cls] += count
+    # 3) Her dosya için say
+    for fname in label_files:
+        mask = np.load(os.path.join(labels_dir, fname))
 
-    print(f"📊 Voxel count per class:\n{voxel_counts}")
+        # background: TARGET_CLASSES dışında kalan tüm pikseller
+        bg_mask = ~np.isin(mask, TARGET_CLASSES)
+        pixel_counts[0] += np.sum(bg_mask)
 
-    # 0 olanlar ve kullanıcı tarafından ignore edilen sınıflar
-    ignored_mask = (voxel_counts == 0)
-    for cls in ignored_classes:
-        ignored_mask[cls] = True
+        # her hedef sınıf
+        for idx, cls in enumerate(TARGET_CLASSES, start=1):
+            pixel_counts[idx] += np.sum(mask == cls)
 
-    # Ağırlıkları hesapla (inverse power)
-    inverse_power = 1.0 / (voxel_counts + epsilon) ** power
-    inverse_power[ignored_mask] = 0.0
+    # 4) Piksel sayılarını yazdır
+    print("\n📊 Class Pixel Counts:")
+    print(f"  Class 0 (background): {pixel_counts[0]} pixels")
+    for idx, cls in enumerate(TARGET_CLASSES, start=1):
+        print(f"  Class {cls} → index {idx}: {pixel_counts[idx]} pixels")
 
-    # Normalize: sadece kullanılacak sınıflar için
-    fg = inverse_power[~ignored_mask]
-    min_fg, max_fg = fg.min(), fg.max()
-    scaled_fg = (fg - min_fg) / (max_fg - min_fg)  # [0,1]
+    # 5) Ağırlıkları ters frekansla hesapla ve normalize et
+    class_weights = 1.0 / (pixel_counts + 1e-6)
+    class_weights = class_weights / class_weights.sum()
+    class_weights_tensor = torch.tensor(class_weights, dtype=torch.float32)
 
-    final_weights = np.zeros_like(inverse_power)
-    final_weights[~ignored_mask] = scaled_fg
-    final_weights[ignored_mask] = 0.0
+    # 6) Ağırlıkları yazdır
+    print("\n⚖️ Final Class Weights:")
+    print(f"  Index 0 (background): {class_weights_tensor[0]:.6f}")
+    for idx, cls in enumerate(TARGET_CLASSES, start=1):
+        print(f"  Class {cls} → index {idx}: {class_weights_tensor[idx]:.6f}")
 
-    weights_tensor = torch.tensor(final_weights, dtype=torch.float32)
-    torch.save(weights_tensor, save_path)
+    # 7) İsteğe bağlı kaydet
+    if save_path:
+        torch.save(class_weights_tensor, save_path)
+        print(f"\n💾 Class weights saved to {save_path!r}")
 
-    print(f"✅ Final class weights:\n{weights_tensor}")
-    return weights_tensor
+    return class_weights_tensor
+
+
+if __name__ == "__main__":
+    # Örnek kullanım
+    labels_directory = r"C:\Users\user\Desktop\TeethSegmentation\2D_dataset\train\masks"
+    weights = compute_class_weights_from_labels(
+        labels_dir=labels_directory,
+        num_classes=NUM_CLASSES,
+        save_path="class_weights.pt",
+        only_upper=True   # sadece upper maskeleri say
+    )
