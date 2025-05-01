@@ -24,7 +24,7 @@ def train_model(
     num_classes=7,
     batch_size=8,
     lr=1e-4,
-    epochs=50,
+    epochs=100,
     device="cuda",
     weight_save_path="class_weights.pt",
     pretrained_model_path=None   # 🔥 yeni eklendi
@@ -58,7 +58,12 @@ def train_model(
         only_upper=True
     ).to(device)
 
-    criterion = CrossEntropyLoss(weight=weights)
+    criterion = CombinedLoss(
+        weight=weights,   # class-balanced cross entropy
+        ce_weight=1.0,          # CE bileşeni ağırlığı
+        dice_weight=1.0,        # Dice bileşeni ağırlığı
+        ignore_index=255       # background da dahil varsayılan
+    )
     optimizer = optim.Adam(model.parameters(), lr=lr)
     scaler = GradScaler()
     logger = TrainLogger("metrics.json")
@@ -142,22 +147,22 @@ def evaluate(model, loader, criterion, device, num_classes):
             loss = criterion(output, label_batch)
             total_loss += loss.item()
 
-            pred = torch.argmax(torch.softmax(output, dim=1), dim=1)
-
+            preds = torch.argmax(torch.softmax(output, dim=1), dim=1)
+            valid_mask = (label_batch != 255)
             # Dice
             dice = 0.0
             for cls in range(1, num_classes):
-                pred_cls = (pred == cls).float()
-                target_cls = (label_batch == cls).float()
-                intersection = (pred_cls * target_cls).sum()
-                union = pred_cls.sum() + target_cls.sum()
-                dice += (2. * intersection + 1e-6) / (union + 1e-6)
+                p = (preds == cls) & valid_mask
+                t = (label_batch == cls) & valid_mask
+                inter = (p & t).sum()
+                union = p.sum() + t.sum()
+                dice += (2*inter + 1e-6)/(union + 1e-6)
 
             dice /= (num_classes - 1)
             dice_scores.append(dice.item())
 
             # 🔥 Accuracy
-            correct = (pred == label_batch).float()
+            correct = (preds == label_batch).float()
             acc = correct.sum() / correct.numel()
             accuracies.append(acc.item())
 

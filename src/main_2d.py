@@ -9,7 +9,7 @@ def main():
 
     batch_size = 8
     lr = 1e-4
-    epochs = 50
+    epochs = 100
     device = "cuda"  # veya "cpu" kullanabilirsin
 
     print("🚀 Eğitim başlatılıyor...")
@@ -22,7 +22,7 @@ def main():
         lr=lr,
         epochs=epochs,
         device=device,
-        pretrained_model_path=None
+        pretrained_model_path=None  # Eğer önceden eğitilmiş bir model varsa buraya yolunu yaz
         
     )
 
