@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="description" content="A comparison of UNet, SegNet, BASNet, BiSeNetV2, DenseASPP and Mask R-CNN for teeth segmentation in dental CT images. Bachelor's thesis, Turkish-German University, 2025.">
+  <meta name="keywords" content="teeth segmentation, dental CT, CBCT, deep learning, UNet, BASNet, SegNet, ToothFairy2">
+  <meta name="author" content="Ali Cemal Deniz">
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="DigiDentPlant: Teeth Segmentation with Deep Neural Networks">
+  <meta property="og:description" content="A comparison of six deep learning models for teeth segmentation in dental CT images.">
+  <meta property="og:url" content="https://alicmldnz.github.io/Teeth-Segmentation/en.html">
+  <meta property="og:image" content="https://alicmldnz.github.io/Teeth-Segmentation/static/images/basnet.png">
+
+  <meta name="citation_title" content="DigiDentPlant: Digital Dental Implant – Zahnsegmentierung mit tiefen neuronalen Netzwerken">
+  <meta name="citation_author" content="Deniz, Ali Cemal">
+  <meta name="citation_publication_date" content="2025/06">
+  <meta name="citation_dissertation_institution" content="Türkisch-Deutsche Universität">
+  <meta name="citation_pdf_url" content="https://alicmldnz.github.io/Teeth-Segmentation/static/pdfs/TDU_Bachelorarbeit_Ali_Cemal_Deniz.pdf">
+
+  <title>DigiDentPlant | Ali Cemal Deniz</title>
+  <link rel="alternate" hreflang="tr" href="https://alicmldnz.github.io/Teeth-Segmentation/">
+  <link rel="alternate" hreflang="en" href="https://alicmldnz.github.io/Teeth-Segmentation/en.html">
+  <link rel="alternate" hreflang="de" href="https://alicmldnz.github.io/Teeth-Segmentation/de.html">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script defer src="static/js/bulma-carousel.min.js"></script>
+  <script defer src="static/js/index.js"></script>
+
+  <style>
+    .results-table { margin: 0 auto; }
+    .results-table td, .results-table th { text-align: center !important; }
+    .results-table .best { background: #eef6ff; font-weight: 700; }
+    .lang-switch { margin-bottom: 1rem; font-weight: 600; }
+    .lang-switch a, .lang-switch span { margin: 0 .4rem; }
+    .lang-switch span { color: #2563eb; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <button class="scroll-to-top" onclick="scrollToTop()" title="Scroll to top" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+
+  <main id="main-content">
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <div class="lang-switch"><a href="index.html">TR</a>·<span>EN</span>·<a href="de.html">DE</a></div>
+            <h1 class="title is-1 publication-title">DigiDentPlant: Digital Dental Implant</h1>
+            <h2 class="subtitle is-4">Teeth Segmentation with Deep Neural Networks</h2>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://github.com/alicmldnz" target="_blank">Ali Cemal Deniz</a>
+              </span>
+            </div>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                Bachelor's Thesis (B.Sc. Computer Science) · Turkish-German University, Faculty of Engineering<br>
+                Supervisor: Assist. Prof. Dr. Dilek Göksel Duru · Istanbul, June 2025
+              </span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="static/pdfs/TDU_Bachelorarbeit_Ali_Cemal_Deniz.pdf" target="_blank"
+                     class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                    <span>Thesis (PDF, German)</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://github.com/alicmldnz/Teeth-Segmentation" target="_blank"
+                     class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fab fa-github"></i></span>
+                    <span>Code</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://ditto.ing.unimore.it/toothfairy2/" target="_blank"
+                     class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fas fa-database"></i></span>
+                    <span>Dataset</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero teaser">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <img src="static/images/basnet.png" alt="BASNet: CT slice, ground truth and prediction; Dice 0.9257">
+        <h2 class="subtitle has-text-centered">
+          Prediction of the best-performing model, BASNet, on a test slice: the 16 upper teeth are segmented in separate colours by FDI number.
+        </h2>
+      </div>
+    </div>
+  </section>
+
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+              Accurate segmentation of teeth from dental computed tomography (CT) images plays a crucial role in clinical
+              diagnosis and treatment planning in dentistry. However, conventional segmentation methods often reach their
+              limits, especially in complex cases involving missing teeth or existing prosthetic restorations. While deep
+              learning methods are increasingly being utilized, comprehensive comparative studies of various segmentation
+              models specifically for dental CT images remain scarce. The aim of this study is to address this research gap by
+              systematically comparing several deep learning architectures, including UNet, SegNet, BASNet, BiSeNet,
+              DenseASPP, and Mask R-CNN. The performance of these models was quantitatively evaluated using a self-created 2D
+              dataset, employing the Dice Similarity Coefficient (DSC), precision, recall, and F1-score as primary evaluation
+              metrics. The results facilitate a clear assessment of the different models, providing valuable guidance for
+              clinicians and researchers in selecting the optimal deep learning model for clinical practice. Overall, this
+              study establishes a foundational reference for future research in the field of dental imaging and segmentation.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop content">
+      <h2 class="title is-3">Method</h2>
+      <ul>
+        <li><strong>Data:</strong> MICCAI 2024 ToothFairy2 dataset (480 CBCT volumes, 42 classes). Because 3D training exceeded the available hardware, a new 2D dataset was built from selected axial slices.</li>
+        <li><strong>Target:</strong> The 16 upper teeth (FDI 11–18, 21–28) plus background; irrelevant regions are excluded from the loss. Split: 80% training, 10% validation, 10% test.</li>
+        <li><strong>Models:</strong> UNet, SegNet, BASNet, BiSeNetV2, DenseASPP and Mask R-CNN, all trained under identical conditions.</li>
+        <li><strong>Loss:</strong> Cross-entropy + Dice (α = β = 1) with class weights based on inverse class frequency.</li>
+        <li><strong>Training:</strong> Adam (lr 1e-4), batch size 8, mixed precision (GradScaler), up to 50 epochs, early stopping with patience 10; augmentation with rotation, scaling and flipping.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section hero is-light">
+    <div class="container is-max-desktop content has-text-centered">
+      <h2 class="title is-3">Results</h2>
+      <div class="table-container">
+        <table class="table is-striped is-hoverable results-table">
+          <thead>
+            <tr><th>Model</th><th>Dice</th><th>Fg Acc</th><th>Bg FP Rate ↓</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
+          </thead>
+          <tbody>
+            <tr class="best"><td>BASNet</td><td>0.7610</td><td>0.8882</td><td>0.0076</td><td>0.7740</td><td>0.9272</td><td>0.8270</td></tr>
+            <tr><td>UNet</td><td>0.7400</td><td>0.8742</td><td>0.0082</td><td>0.7651</td><td>0.9219</td><td>0.8200</td></tr>
+            <tr><td>SegNet</td><td>0.7031</td><td>0.8872</td><td>0.0097</td><td>0.7379</td><td>0.9379</td><td>0.8101</td></tr>
+            <tr><td>DenseASPP</td><td>0.6135</td><td>0.8697</td><td>0.0131</td><td>0.6784</td><td>0.9454</td><td>0.7740</td></tr>
+            <tr><td>BiSeNetV2</td><td>0.5414</td><td>0.7181</td><td>0.0150</td><td>0.6553</td><td>0.9268</td><td>0.7507</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="has-text-justified">
+        <p>
+          On the test set, <strong>BASNet</strong> achieved the highest Dice and F1 scores, thanks to its boundary-aware design.
+          UNet and SegNet followed closely. BiSeNetV2 and DenseASPP struggled with fine anatomical details.
+          Despite extensive investigation, Mask R-CNN failed to learn this dataset and could not be evaluated. A fine-tuning
+          strategy with gradual encoder unfreezing gave no advantage over full training from the start.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero is-small">
+    <div class="hero-body">
+      <div class="container">
+        <h2 class="title is-3 has-text-centered">Example Segmentations</h2>
+        <div id="results-carousel" class="carousel results-carousel">
+          <div class="item">
+            <img src="static/images/basnet2.png" alt="BASNet example segmentation" loading="lazy"/>
+            <h2 class="subtitle has-text-centered">BASNet</h2>
+          </div>
+          <div class="item">
+            <img src="static/images/unet.png" alt="UNet example segmentation" loading="lazy"/>
+            <h2 class="subtitle has-text-centered">UNet</h2>
+          </div>
+          <div class="item">
+            <img src="static/images/segnet.png" alt="SegNet example segmentation" loading="lazy"/>
+            <h2 class="subtitle has-text-centered">SegNet</h2>
+          </div>
+          <div class="item">
+            <img src="static/images/denseaspp.png" alt="DenseASPP example segmentation" loading="lazy"/>
+            <h2 class="subtitle has-text-centered">DenseASPP</h2>
+          </div>
+          <div class="item">
+            <img src="static/images/bisenet.png" alt="BiSeNetV2 example segmentation" loading="lazy"/>
+            <h2 class="subtitle has-text-centered">BiSeNetV2</h2>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  </main>
+
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <div class="bibtex-header">
+        <h2 class="title">BibTeX</h2>
+        <button class="copy-bibtex-btn" onclick="copyBibTeX()" title="Copy BibTeX to clipboard" data-done="Copied">
+          <i class="fas fa-copy"></i>
+          <span class="copy-text">Copy</span>
+        </button>
+      </div>
+      <pre id="bibtex-code"><code>@thesis{deniz2025digidentplant,
+  title       = {DigiDentPlant: Digital Dental Implant -- Zahnsegmentierung mit tiefen neuronalen Netzwerken},
+  author      = {Deniz, Ali Cemal},
+  type        = {Bachelorarbeit},
+  institution = {T{\"u}rkisch-Deutsche Universit{\"a}t},
+  address     = {Istanbul},
+  year        = {2025},
+  month       = jun,
+  url         = {https://alicmldnz.github.io/Teeth-Segmentation/}
+}</code></pre>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p>
+              This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a>.
+              It is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a> license.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

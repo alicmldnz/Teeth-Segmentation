@@ -3,13 +3,14 @@ function copyBibTeX() {
     const bibtexElement = document.getElementById('bibtex-code');
     const button = document.querySelector('.copy-bibtex-btn');
     const copyText = button.querySelector('.copy-text');
+    const label = copyText.textContent;
 
     navigator.clipboard.writeText(bibtexElement.textContent).then(function() {
         button.classList.add('copied');
-        copyText.textContent = 'Kopyalandı';
+        copyText.textContent = button.dataset.done;
         setTimeout(function() {
             button.classList.remove('copied');
-            copyText.textContent = 'Kopyala';
+            copyText.textContent = label;
         }, 2000);
     });
 }

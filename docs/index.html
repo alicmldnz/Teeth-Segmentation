@@ -21,6 +21,9 @@
   <meta name="citation_pdf_url" content="https://alicmldnz.github.io/Teeth-Segmentation/static/pdfs/TDU_Bachelorarbeit_Ali_Cemal_Deniz.pdf">
 
   <title>DigiDentPlant | Ali Cemal Deniz</title>
+  <link rel="alternate" hreflang="tr" href="https://alicmldnz.github.io/Teeth-Segmentation/">
+  <link rel="alternate" hreflang="en" href="https://alicmldnz.github.io/Teeth-Segmentation/en.html">
+  <link rel="alternate" hreflang="de" href="https://alicmldnz.github.io/Teeth-Segmentation/de.html">
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
 
@@ -38,6 +41,9 @@
     .results-table { margin: 0 auto; }
     .results-table td, .results-table th { text-align: center !important; }
     .results-table .best { background: #eef6ff; font-weight: 700; }
+    .lang-switch { margin-bottom: 1rem; font-weight: 600; }
+    .lang-switch a, .lang-switch span { margin: 0 .4rem; }
+    .lang-switch span { color: #2563eb; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -52,6 +58,7 @@
       <div class="container is-max-desktop">
         <div class="columns is-centered">
           <div class="column has-text-centered">
+            <div class="lang-switch"><span>TR</span>·<a href="en.html">EN</a>·<a href="de.html">DE</a></div>
             <h1 class="title is-1 publication-title">DigiDentPlant: Digital Dental Implant</h1>
             <h2 class="subtitle is-4">Zahnsegmentierung mit tiefen neuronalen Netzwerken</h2>
             <div class="is-size-5 publication-authors">
@@ -208,7 +215,7 @@
     <div class="container is-max-desktop content">
       <div class="bibtex-header">
         <h2 class="title">BibTeX</h2>
-        <button class="copy-bibtex-btn" onclick="copyBibTeX()" title="BibTeX'i kopyala">
+        <button class="copy-bibtex-btn" onclick="copyBibTeX()" title="BibTeX'i kopyala" data-done="Kopyalandı">
           <i class="fas fa-copy"></i>
           <span class="copy-text">Kopyala</span>
         </button>
