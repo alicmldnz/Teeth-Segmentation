@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="description" content="Dental BT görüntülerinde diş segmentasyonu için UNet, SegNet, BASNet, BiSeNetV2, DenseASPP ve Mask R-CNN modellerinin karşılaştırması. Türk-Alman Üniversitesi lisans tezi, 2025.">
+  <meta name="keywords" content="diş segmentasyonu, Zahnsegmentierung, teeth segmentation, CBCT, deep learning, UNet, BASNet, SegNet, ToothFairy2">
+  <meta name="author" content="Ali Cemal Deniz">
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="DigiDentPlant: Zahnsegmentierung mit tiefen neuronalen Netzwerken">
+  <meta property="og:description" content="Dental BT görüntülerinde diş segmentasyonu için altı derin öğrenme modelinin karşılaştırması.">
+  <meta property="og:url" content="https://alicmldnz.github.io/Teeth-Segmentation/">
+  <meta property="og:image" content="https://alicmldnz.github.io/Teeth-Segmentation/static/images/basnet.png">
+
+  <meta name="citation_title" content="DigiDentPlant: Digital Dental Implant – Zahnsegmentierung mit tiefen neuronalen Netzwerken">
+  <meta name="citation_author" content="Deniz, Ali Cemal">
+  <meta name="citation_publication_date" content="2025/06">
+  <meta name="citation_dissertation_institution" content="Türkisch-Deutsche Universität">
+  <meta name="citation_pdf_url" content="https://alicmldnz.github.io/Teeth-Segmentation/static/pdfs/TDU_Bachelorarbeit_Ali_Cemal_Deniz.pdf">
+
+  <title>DigiDentPlant | Ali Cemal Deniz</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦷</text></svg>">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script defer src="static/js/bulma-carousel.min.js"></script>
+  <script defer src="static/js/index.js"></script>
+
+  <style>
+    .results-table { margin: 0 auto; }
+    .results-table td, .results-table th { text-align: center !important; }
+    .results-table .best { background: #eef6ff; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <button class="scroll-to-top" onclick="scrollToTop()" title="Yukarı çık" aria-label="Yukarı çık">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+
+  <main id="main-content">
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">DigiDentPlant: Digital Dental Implant</h1>
+            <h2 class="subtitle is-4">Zahnsegmentierung mit tiefen neuronalen Netzwerken</h2>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://github.com/alicmldnz" target="_blank">Ali Cemal Deniz</a>
+              </span>
+            </div>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                Lisans Tezi (B.Sc. Informatik) · Türk-Alman Üniversitesi, Mühendislik Fakültesi<br>
+                Danışman: Dr. Öğr. Üyesi Dilek Göksel Duru · İstanbul, Haziran 2025
+              </span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="static/pdfs/TDU_Bachelorarbeit_Ali_Cemal_Deniz.pdf" target="_blank"
+                     class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                    <span>Tez (PDF)</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://github.com/alicmldnz/Teeth-Segmentation" target="_blank"
+                     class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fab fa-github"></i></span>
+                    <span>Kod</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://ditto.ing.unimore.it/toothfairy2/" target="_blank"
+                     class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fas fa-database"></i></span>
+                    <span>Veri seti</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero teaser">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <img src="static/images/basnet.png" alt="BASNet modeli: BT kesiti, gerçek maske ve tahmin; Dice 0.9257">
+        <h2 class="subtitle has-text-centered">
+          En iyi sonucu veren BASNet modelinin bir test kesitindeki tahmini: 16 üst çene dişi FDI numarasına göre ayrı renklerle segmente edilmiştir.
+        </h2>
+      </div>
+    </div>
+  </section>
+
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Özet</h2>
+          <div class="content has-text-justified">
+            <p>
+              Dental bilgisayarlı tomografi (BT) görüntülerinden dişlerin doğru segmentasyonu, diş hekimliğinde klinik tanı ve
+              tedavi planlamasında kritik bir rol oynar. Ancak geleneksel segmentasyon yöntemleri, özellikle eksik dişler veya
+              mevcut protetik restorasyonlar gibi karmaşık durumlarda sınırlarına ulaşır. Derin öğrenme yöntemleri giderek daha
+              fazla kullanılsa da dental BT görüntülerine özgü segmentasyon modellerini kapsamlı biçimde karşılaştıran çalışmalar
+              sınırlıdır. Bu çalışma, UNet, SegNet, BASNet, BiSeNet, DenseASPP ve Mask R-CNN gibi çeşitli derin öğrenme
+              mimarilerini sistematik olarak karşılaştırarak bu boşluğu doldurmayı amaçlamaktadır. Modellerin performansı, bu
+              çalışma için oluşturulan 2B bir veri seti üzerinde Dice Benzerlik Katsayısı (DSC), precision, recall ve F1-skoru
+              ile nicel olarak değerlendirilmiştir. Sonuçlar, farklı modellerin net bir değerlendirmesini sunarak klinisyenler ve
+              araştırmacılar için uygun model seçiminde yol gösterici olmakta ve dental görüntüleme alanındaki gelecek
+              çalışmalar için temel bir referans oluşturmaktadır.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container is-max-desktop content">
+      <h2 class="title is-3">Yöntem</h2>
+      <ul>
+        <li><strong>Veri:</strong> MICCAI 2024 ToothFairy2 veri seti (480 CBCT hacmi, 42 sınıf). 3B eğitimin donanım sınırlarını aşması nedeniyle hacimlerden seçilen aksiyel kesitlerle yeni bir 2B veri seti oluşturuldu.</li>
+        <li><strong>Hedef:</strong> Üst çenedeki 16 diş (FDI 11–18, 21–28) + arka plan; ilgisiz bölgeler kayıp hesabından çıkarıldı. Bölünme: %80 eğitim, %10 doğrulama, %10 test.</li>
+        <li><strong>Modeller:</strong> UNet, SegNet, BASNet, BiSeNetV2, DenseASPP ve Mask R-CNN; hepsi aynı koşullarda eğitildi.</li>
+        <li><strong>Kayıp:</strong> Cross-Entropy + Dice (α = β = 1), ters sınıf frekansına dayalı sınıf ağırlıklarıyla.</li>
+        <li><strong>Eğitim:</strong> Adam (lr 1e-4), batch 8, karma hassasiyet (GradScaler), en fazla 50 epoch, sabır değeri 10 olan erken durdurma; döndürme, ölçekleme ve yansıtma ile veri artırma.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section hero is-light">
+    <div class="container is-max-desktop content has-text-centered">
+      <h2 class="title is-3">Sonuçlar</h2>
+      <div class="table-container">
+        <table class="table is-striped is-hoverable results-table">
+          <thead>
+            <tr><th>Model</th><th>Dice</th><th>Fg Acc</th><th>Bg FP Rate ↓</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
+          </thead>
+          <tbody>
+            <tr class="best"><td>BASNet</td><td>0.7610</td><td>0.8882</td><td>0.0076</td><td>0.7740</td><td>0.9272</td><td>0.8270</td></tr>
+            <tr><td>UNet</td><td>0.7400</td><td>0.8742</td><td>0.0082</td><td>0.7651</td><td>0.9219</td><td>0.8200</td></tr>
+            <tr><td>SegNet</td><td>0.7031</td><td>0.8872</td><td>0.0097</td><td>0.7379</td><td>0.9379</td><td>0.8101</td></tr>
+            <tr><td>DenseASPP</td><td>0.6135</td><td>0.8697</td><td>0.0131</td><td>0.6784</td><td>0.9454</td><td>0.7740</td></tr>
+            <tr><td>BiSeNetV2</td><td>0.5414</td><td>0.7181</td><td>0.0150</td><td>0.6553</td><td>0.9268</td><td>0.7507</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="has-text-justified">
+        <p>
+          Test setindeki sonuçlara göre <strong>BASNet</strong>, sınır farkındalıklı (boundary-aware) yapısı sayesinde en yüksek Dice ve F1
+          skorlarına ulaştı. UNet ve SegNet onu yakından izledi. BiSeNetV2 ve DenseASPP ince anatomik ayrıntılarda zayıf kaldı.
+          Mask R-CNN yoğun incelemeye rağmen bu veri setini öğrenemedi ve değerlendirmeye alınamadı. Ayrıca kademeli
+          encoder açmaya dayanan fine-tuning stratejisi, baştan tam eğitime göre avantaj sağlamadı.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero is-small">
+    <div class="hero-body">
+      <div class="container">
+        <h2 class="title is-3 has-text-centered">Örnek Segmentasyonlar</h2>
+        <div id="results-carousel" class="carousel results-carousel">
+          <div class="item">
+            <img src="static/images/basnet2.png" alt="BASNet örnek segmentasyonu" loading="lazy"/>
+            <h2 class="subtitle has-text-centered">BASNet</h2>
+          </div>
+          <div class="item">
+            <img src="static/images/unet.png" alt="UNet örnek segmentasyonu" loading="lazy"/>
+            <h2 class="subtitle has-text-centered">UNet</h2>
+          </div>
+          <div class="item">
+            <img src="static/images/segnet.png" alt="SegNet örnek segmentasyonu" loading="lazy"/>
+            <h2 class="subtitle has-text-centered">SegNet</h2>
+          </div>
+          <div class="item">
+            <img src="static/images/denseaspp.png" alt="DenseASPP örnek segmentasyonu" loading="lazy"/>
+            <h2 class="subtitle has-text-centered">DenseASPP</h2>
+          </div>
+          <div class="item">
+            <img src="static/images/bisenet.png" alt="BiSeNetV2 örnek segmentasyonu" loading="lazy"/>
+            <h2 class="subtitle has-text-centered">BiSeNetV2</h2>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  </main>
+
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <div class="bibtex-header">
+        <h2 class="title">BibTeX</h2>
+        <button class="copy-bibtex-btn" onclick="copyBibTeX()" title="BibTeX'i kopyala">
+          <i class="fas fa-copy"></i>
+          <span class="copy-text">Kopyala</span>
+        </button>
+      </div>
+      <pre id="bibtex-code"><code>@thesis{deniz2025digidentplant,
+  title       = {DigiDentPlant: Digital Dental Implant -- Zahnsegmentierung mit tiefen neuronalen Netzwerken},
+  author      = {Deniz, Ali Cemal},
+  type        = {Bachelorarbeit},
+  institution = {T{\"u}rkisch-Deutsche Universit{\"a}t},
+  address     = {Istanbul},
+  year        = {2025},
+  month       = jun,
+  url         = {https://alicmldnz.github.io/Teeth-Segmentation/}
+}</code></pre>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p>
+              Bu sayfa <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a>
+              kullanılarak hazırlanmıştır. Sayfa <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">CC BY-SA 4.0</a> lisanslıdır.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
